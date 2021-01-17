@@ -10,7 +10,6 @@
  */
 
 const SHA256 = require('crypto-js/sha256');
-const hex2ascii = require('hex2ascii'); 
 
 class Block {
 
@@ -40,9 +39,18 @@ class Block {
         return new Promise((resolve, reject) => {
             // Save in auxiliary variable the current block hash
             let oldHash = self.hash;
-            console.log(`Block Hash: ${oldHash}`);     
+            console.log(`Block Hash: ${oldHash}`);  
+            
+            //assigned as null because before adding the block in the chain the hash value was null
+            self.hash = null;        
+            
             // Recalculate the hash of the Block
-            let newHash = SHA256(JSON.stringify(this).toString());
+            let newHash = SHA256(JSON.stringify(self).toString());
+
+            // assign the original hash value back to the hash property. 
+            //Because no one is not allowed to tamper with the original hash value of the block
+            self.hash = oldHash
+            
             // Comparing if the hashes changed
             if (oldHash === newHash) { 
                 resolve(true); // Returning the Block is valid
@@ -63,16 +71,20 @@ class Block {
      */
     getBData() {
         let self = this;
-        // Getting the encoded data saved in the Block
-        let encodedData = self.body;
-        // Decoding for JSON representation    
-        let jsonData = hex2ascii(encodedData);
-        // Parse the data to an object to be retrieved.
-        let data = JSON.parse(jsonData);
-        // Resolve with the data if the object isn't genesis
-        if((self.height > 0) && data) {
-            return data;
-        } 
+        return new Promise((resolve,reject) => {  
+            // Getting the encoded data saved in the Block
+            let encodedBody = self.body;
+            // Decoding for JSON representation    
+            let jsonData = new Buffer.from(encodedBody, 'hex');
+            // Parse the data to an object to be retrieved.
+            let data = JSON.parse(jsonData);
+            // Resolve with the data if the object isn't genesis
+            if((self.height > 0) && data) {
+                resolve(data);
+            } else{
+                resolve(false);
+            }
+        });
     }
 
 }
