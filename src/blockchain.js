@@ -148,6 +148,7 @@ class Blockchain {
     getBlockByHash(hash) {
         let self = this;
         return new Promise((resolve, reject) => {
+            // The filter function loops through the blocks and sorts the blocks.
             let block = self.chain.filter(bk => bk.hash === hash)[0];
             if(block){
                 resolve(block);
@@ -165,6 +166,7 @@ class Blockchain {
     getBlockByHeight(height) {
         let self = this;
         return new Promise((resolve, reject) => {
+            // The filter function loops through the blocks and sorts the blocks.
             let block = self.chain.filter(bk => bk.height === height)[0];
             if(block){
                 resolve(block);
@@ -184,15 +186,17 @@ class Blockchain {
         let self = this;
         let starArr = [];
         return new Promise((resolve, reject) => {
-            self.chain.forEach((bk) => {
-                let data = bk.getBData();
+            self.chain.forEach( async (bk) => {
+                let data = await bk.getBData();
                 if(data){
                     if (data.owner === address){
                         starArr.push(data);
                     }
                 }
             });
+
             resolve(starArr);
+ 
         });
     }
 
@@ -202,14 +206,15 @@ class Blockchain {
      * 1. You should validate each block using `validateBlock`
      * 2. Each Block should check the with the previousBlockHash
      */
-    validateChain() {
+    async validateChain() {
         let self = this;
         let errorList = [];
         return new Promise(async (resolve, reject) => {
             let promises = [];
             let i = 0;
-            self.chain.forEach(block => {
-                promises.push(block.validate());
+            self.chain.forEach(async  block => {
+                let validateBlock = await block.validate();
+                promises.push(validateBlock);
                 if(block.height > 0) {
                     let previousBlockHash = block.previousBlockHash;
                     let blockHash = chain[i-1].hash;
@@ -222,7 +227,7 @@ class Blockchain {
             Promise.all(promises).then((results) => {
                 i = 0;
                 results.forEach(valid => {
-                    if(!valid){
+                    if(!valid) {
                         errorList.push(`[Error] Block Heigh: ${self.chain[index].height} >> Has been Tampered !!`);
                     }
                     i++;
